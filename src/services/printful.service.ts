@@ -4,7 +4,7 @@ import {
   CreateOrderRequest,
   SyncProductRequest,
 } from "../types/products";
-import { transformToSnakeCase } from "../utils/common";
+import { sanitizeUrlsInObject, transformToSnakeCase } from "../utils/common";
 import logger from "../utils/logger";
 
 export class PrintfulService {
@@ -104,7 +104,7 @@ export class PrintfulService {
     try {
       logger.info(`Fetching details for order ID: ${orderId}`);
 
-      const response = await printfulClient.get(`/orders/${orderId}`,{
+      const response = await printfulClient.get(`/orders/${orderId}`, {
         params: { store_id: storeId },
       });
 
@@ -148,11 +148,11 @@ export class PrintfulService {
     isConfirmed: boolean = false
   ) {
     try {
-      const transFormOrder =
+      const orderSnakeCase =
         transformToSnakeCase<CreateOrderRequest>(orderData);
       logger.info("Creating new order...", { orderData });
 
-      const response = await printfulClient.post("/orders", transFormOrder, {
+      const response = await printfulClient.post("/orders", orderSnakeCase, {
         headers: { "X-PF-Store-Id": storeId },
         params: { confirm: isConfirmed },
       });
@@ -195,13 +195,20 @@ export class PrintfulService {
   /**
    * Sync new products with Printful store.
    */
-  static async syncProduct(productData: SyncProductRequest) {
+  static async syncProduct(productData: SyncProductRequest, storeId: string) {
     try {
       logger.info("Syncing new product with Printful...", { productData });
 
+      const sanitizedRequestBody =
+        sanitizeUrlsInObject<SyncProductRequest>(productData);
+
+      const productSnakeCase =
+        transformToSnakeCase<SyncProductRequest>(sanitizedRequestBody);
+
       const response = await printfulClient.post(
         `/store/products`,
-        productData
+        productSnakeCase,
+        { headers: { "X-PF-Store-Id": storeId } }
       );
 
       logger.info("Product synced successfully");
@@ -209,7 +216,7 @@ export class PrintfulService {
     } catch (error: any) {
       logger.error(
         "Printful API Error:",
-        error.response?.data || error.message
+        error.response?.data?.error?.message || error.message
       );
       throw new Error("Failed to sync product with Printful");
     }

@@ -47,3 +47,31 @@ export function transformToSnakeCase<T>(data: T): any {
   }
   return data;
 }
+
+/**
+ * Recursively sanitizes URLs in an object by removing unwanted characters.
+ * @param data The input object or value to sanitize.
+ * @returns The sanitized object with cleaned URLs.
+ */
+export function sanitizeUrlsInObject<T>(data: T): T {
+  if (typeof data === "string") {
+    const sanitized = data.includes("http") ? data.replace(/\u200B/g, "").trim() : data;
+    if (sanitized !== data) {
+      logger.warn(`sanitizeUrlsInObject: Fixed URL - ${data} → ${sanitized}`);
+    }
+    return sanitized as T;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(sanitizeUrlsInObject) as T;
+  }
+
+  if (data !== null && typeof data === "object") {
+    return Object.keys(data).reduce<Record<string, any>>((acc, key) => {
+      acc[key] = sanitizeUrlsInObject((data as Record<string, any>)[key]);
+      return acc;
+    }, {}) as T;
+  }
+
+  return data;
+}

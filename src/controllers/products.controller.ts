@@ -64,3 +64,24 @@ export const getProductById = async (
     next(error);
   }
 };
+
+export const syncProduct = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    logger.info("Syncing new product with Printful...");
+
+    const storeId = req.headers["x-pf-store-id"] as string | undefined;
+    const productData = req.body;
+    if (!storeId) {
+      throw new Error(ERROR_MESSAGES.STORE_ID_REQUIRED);
+    }
+
+    const product = await PrintfulService.syncProduct(productData, storeId);
+    res.status(201).json(product);
+  } catch (error) {
+    next(error);
+  }
+};
