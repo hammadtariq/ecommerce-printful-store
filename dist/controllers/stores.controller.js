@@ -11,10 +11,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getStore = void 0;
 const printful_service_1 = require("../services/printful.service");
+const constants_1 = require("../constants");
 const getStore = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         console.log("Fetching store by id from Printful...");
-        const storeId = req.params.store_id;
+        const storeId = req.query.store_id;
+        if (!storeId) {
+            throw new Error(constants_1.ERROR_MESSAGES.STORE_ID_REQUIRED);
+        }
         const storeInfo = yield printful_service_1.PrintfulService.getStoreInfo(storeId);
         res.status(200).json(storeInfo);
     }

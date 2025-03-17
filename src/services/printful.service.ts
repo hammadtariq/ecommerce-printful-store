@@ -1,45 +1,77 @@
-import { config } from "../config/env";
 import { printfulClient } from "../config/printful";
-import { ShippingRatesRequest } from "../types/products";
+import {
+  ShippingRatesRequest,
+  CreateOrderRequest,
+  SyncProductRequest,
+} from "../types/products";
+import { transformToSnakeCase } from "../utils/common";
 import logger from "../utils/logger";
 
 export class PrintfulService {
-
   /**
    * Get all products from Printful store.
    */
-  static async getProductsByStore(storeId: string){
+  static async getProductsByStore(storeId: string) {
     try {
       logger.info("Fetching products by store from Printful...", { storeId });
 
       const response = await printfulClient.get(`/store/products`, {
         params: { store_id: storeId },
       });
+
       logger.info("Products fetched successfully");
       return response.data;
     } catch (error: any) {
-      logger.error("Printful API Error:", error.response?.data || error.message);
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
       throw new Error("Failed to fetch products from Printful");
     }
   }
 
   /**
    * Get details of a specific product.
-   * @param productId - The Printful product ID.
    */
-  static async getProductById(productId: string, storeId: string) {
+  static async getProductById(productId: string) {
     try {
       logger.info(`Fetching details for product ID: ${productId}`);
 
-      const response = await printfulClient.get(`/store/products/${productId}`, {
-        params: { store_id: storeId },
-      });
+      const response = await printfulClient.get(`/products/${productId}`);
 
       logger.info("Product details fetched successfully");
       return response.data;
     } catch (error: any) {
-      logger.error("Printful API Error:", error.response?.data || error.message);
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
       throw new Error("Failed to fetch product details from Printful");
+    }
+  }
+
+  /**
+   * Get details of a specific product in a store.
+   */
+  static async getStoreProductById(productId: string, storeId: string) {
+    try {
+      logger.info(`Fetching store product details for ID: ${productId}`);
+
+      const response = await printfulClient.get(
+        `/store/products/${productId}`,
+        {
+          params: { store_id: storeId },
+        }
+      );
+
+      logger.info("Store product details fetched successfully");
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error("Failed to fetch store product details from Printful");
     }
   }
 
@@ -48,43 +80,49 @@ export class PrintfulService {
    */
   static async getStoreInfo(storeId: string) {
     try {
-      logger.info("Fetching store information...");
+      logger.info("Fetching store information...", { storeId });
 
-      const response = await printfulClient.get(`/store`,{
+      const response = await printfulClient.get(`/store`, {
         params: { store_id: storeId },
       });
 
       logger.info("Store information fetched successfully");
       return response.data;
     } catch (error: any) {
-      logger.error("Printful API Error:", error.response?.data || error.message);
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
       throw new Error("Failed to fetch store information from Printful");
     }
   }
 
   /**
    * Get details of a specific order.
-   * @param orderId - The Printful order ID.
    */
   static async getOrderById(orderId: string, storeId: string) {
     try {
       logger.info(`Fetching details for order ID: ${orderId}`);
 
-      const response = await printfulClient.get(`/orders/${orderId}`);
+      const response = await printfulClient.get(`/orders/${orderId}`,{
+        params: { store_id: storeId },
+      });
 
       logger.info("Order details fetched successfully");
       return response.data;
     } catch (error: any) {
-      logger.error("Printful API Error:", error.response?.data || error.message);
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
       throw new Error("Failed to fetch order details from Printful");
     }
   }
 
   /**
    * Get tracking details for an order.
-   * @param orderId - The Printful order ID.
    */
-  static async getOrderTracking(orderId: string, storeId: string) {
+  static async getOrderTracking(orderId: string) {
     try {
       logger.info(`Fetching tracking details for order ID: ${orderId}`);
 
@@ -93,19 +131,49 @@ export class PrintfulService {
       logger.info("Order tracking fetched successfully");
       return response.data;
     } catch (error: any) {
-      logger.error("Printful API Error:", error.response?.data || error.message);
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
       throw new Error("Failed to fetch tracking information from Printful");
     }
   }
 
   /**
+   * Create a new order.
+   */
+  static async createOrder(
+    orderData: CreateOrderRequest,
+    storeId: string,
+    isConfirmed: boolean = false
+  ) {
+    try {
+      const transFormOrder =
+        transformToSnakeCase<CreateOrderRequest>(orderData);
+      logger.info("Creating new order...", { orderData });
+
+      const response = await printfulClient.post("/orders", transFormOrder, {
+        headers: { "X-PF-Store-Id": storeId },
+        params: { confirm: isConfirmed },
+      });
+
+      logger.info("Order created successfully");
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error("Failed to create order in Printful");
+    }
+  }
+
+  /**
    * Get shipping rates for an order.
-   * @param recipient - The recipient's country code.
-   * @param items - Array of items (variant_id and quantity).
    */
   static async getShippingRates(params: ShippingRatesRequest) {
     try {
-      const { recipient, items, store_id } = params;
+      const { recipient, items } = params;
       logger.info("Fetching shipping rates...", { recipient, items });
 
       const response = await printfulClient.post(`/shipping/rates`, {
@@ -116,8 +184,34 @@ export class PrintfulService {
       logger.info("Shipping rates fetched successfully");
       return response.data;
     } catch (error: any) {
-      logger.error("Printful API Error:", error.response?.data || error.message);
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
       throw new Error("Failed to fetch shipping rates from Printful");
+    }
+  }
+
+  /**
+   * Sync new products with Printful store.
+   */
+  static async syncProduct(productData: SyncProductRequest) {
+    try {
+      logger.info("Syncing new product with Printful...", { productData });
+
+      const response = await printfulClient.post(
+        `/store/products`,
+        productData
+      );
+
+      logger.info("Product synced successfully");
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error("Failed to sync product with Printful");
     }
   }
 }

@@ -5,7 +5,7 @@ import { Router } from "express";
 
 const router = Router();
 router.use("/store", storeRoutes);
-router.use("/orders", orderRoutes);
+router.use("/order", orderRoutes);
 router.use("/products", productRoutes);
 
 export default router;

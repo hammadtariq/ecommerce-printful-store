@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { PrintfulService } from "../services/printful.service";
 import logger from "../utils/logger";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeJsonParse, transformToSnakeCase } from "../utils/common";
 import { ERROR_MESSAGES } from "../constants";
-import { Item, ShippingRatesRequest } from "../types/products";
+import { CreateOrderRequest, Item, ShippingRatesRequest } from "../types/products";
 
 export const getOrderById = async (
   req: Request,
@@ -44,7 +44,7 @@ export const getOrderTracking = async (
     if (!storeId) {
       throw new Error(ERROR_MESSAGES.STORE_ID_REQUIRED);
     }
-    const product = await PrintfulService.getOrderTracking(orderId, storeId);
+    const product = await PrintfulService.getOrderTracking(orderId);
     res.status(200).json(product);
   } catch (error) {
     next(error);
@@ -82,7 +82,7 @@ export const getShippingRates = async (
       items.length === 0 ||
       !items.every(
         (item) =>
-          typeof item.variant_id === "number" &&
+          typeof item.variantId === "number" &&
           typeof item.quantity === "number"
       )
     ) {
@@ -95,13 +95,31 @@ export const getShippingRates = async (
       country_code: countryCode,
     };
 
-    const request: ShippingRatesRequest = {
-      recipient,
-      items,
-      store_id: storeId,
-    };
+    const request: ShippingRatesRequest = { recipient,items,storeId };
     const product = await PrintfulService.getShippingRates(request);
     res.status(200).json(product);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    logger.info("Creating a new order in Printful...");
+
+    const storeId = req.headers["x-pf-store-id"] as string | undefined;
+    const isConfirmed = req.query.isConfirmed  as boolean | undefined;
+    const orderData = req.body;
+    if (!storeId) {
+      throw new Error(ERROR_MESSAGES.STORE_ID_REQUIRED);
+    }
+
+    const newOrder = await PrintfulService.createOrder(orderData, storeId, isConfirmed);
+    res.status(201).json(newOrder);
   } catch (error) {
     next(error);
   }

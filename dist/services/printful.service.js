@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrintfulService = void 0;
 const printful_1 = require("../config/printful");
+const common_1 = require("../utils/common");
 const logger_1 = __importDefault(require("../utils/logger"));
 class PrintfulService {
     /**
@@ -38,16 +39,13 @@ class PrintfulService {
     }
     /**
      * Get details of a specific product.
-     * @param productId - The Printful product ID.
      */
-    static getProductById(productId, storeId) {
+    static getProductById(productId) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
                 logger_1.default.info(`Fetching details for product ID: ${productId}`);
-                const response = yield printful_1.printfulClient.get(`/store/products/${productId}`, {
-                    params: { store_id: storeId },
-                });
+                const response = yield printful_1.printfulClient.get(`/products/${productId}`);
                 logger_1.default.info("Product details fetched successfully");
                 return response.data;
             }
@@ -58,13 +56,33 @@ class PrintfulService {
         });
     }
     /**
+     * Get details of a specific product in a store.
+     */
+    static getStoreProductById(productId, storeId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            try {
+                logger_1.default.info(`Fetching store product details for ID: ${productId}`);
+                const response = yield printful_1.printfulClient.get(`/store/products/${productId}`, {
+                    params: { store_id: storeId },
+                });
+                logger_1.default.info("Store product details fetched successfully");
+                return response.data;
+            }
+            catch (error) {
+                logger_1.default.error("Printful API Error:", ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
+                throw new Error("Failed to fetch store product details from Printful");
+            }
+        });
+    }
+    /**
      * Get Printful store information.
      */
     static getStoreInfo(storeId) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
-                logger_1.default.info("Fetching store information...");
+                logger_1.default.info("Fetching store information...", { storeId });
                 const response = yield printful_1.printfulClient.get(`/store`, {
                     params: { store_id: storeId },
                 });
@@ -79,14 +97,15 @@ class PrintfulService {
     }
     /**
      * Get details of a specific order.
-     * @param orderId - The Printful order ID.
      */
     static getOrderById(orderId, storeId) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
                 logger_1.default.info(`Fetching details for order ID: ${orderId}`);
-                const response = yield printful_1.printfulClient.get(`/orders/${orderId}`);
+                const response = yield printful_1.printfulClient.get(`/orders/${orderId}`, {
+                    params: { store_id: storeId },
+                });
                 logger_1.default.info("Order details fetched successfully");
                 return response.data;
             }
@@ -98,9 +117,8 @@ class PrintfulService {
     }
     /**
      * Get tracking details for an order.
-     * @param orderId - The Printful order ID.
      */
-    static getOrderTracking(orderId, storeId) {
+    static getOrderTracking(orderId) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
@@ -116,15 +134,35 @@ class PrintfulService {
         });
     }
     /**
+     * Create a new order.
+     */
+    static createOrder(orderData_1, storeId_1) {
+        return __awaiter(this, arguments, void 0, function* (orderData, storeId, isConfirmed = false) {
+            var _a;
+            try {
+                const transFormOrder = (0, common_1.transformToSnakeCase)(orderData);
+                logger_1.default.info("Creating new order...", { orderData });
+                const response = yield printful_1.printfulClient.post("/orders", transFormOrder, {
+                    headers: { "X-PF-Store-Id": storeId },
+                    params: { confirm: isConfirmed },
+                });
+                logger_1.default.info("Order created successfully");
+                return response.data;
+            }
+            catch (error) {
+                logger_1.default.error("Printful API Error:", ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
+                throw new Error("Failed to create order in Printful");
+            }
+        });
+    }
+    /**
      * Get shipping rates for an order.
-     * @param recipient - The recipient's country code.
-     * @param items - Array of items (variant_id and quantity).
      */
     static getShippingRates(params) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
-                const { recipient, items, store_id } = params;
+                const { recipient, items } = params;
                 logger_1.default.info("Fetching shipping rates...", { recipient, items });
                 const response = yield printful_1.printfulClient.post(`/shipping/rates`, {
                     recipient,
@@ -136,6 +174,24 @@ class PrintfulService {
             catch (error) {
                 logger_1.default.error("Printful API Error:", ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
                 throw new Error("Failed to fetch shipping rates from Printful");
+            }
+        });
+    }
+    /**
+     * Sync new products with Printful store.
+     */
+    static syncProduct(productData) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            try {
+                logger_1.default.info("Syncing new product with Printful...", { productData });
+                const response = yield printful_1.printfulClient.post(`/store/products`, productData);
+                logger_1.default.info("Product synced successfully");
+                return response.data;
+            }
+            catch (error) {
+                logger_1.default.error("Printful API Error:", ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
+                throw new Error("Failed to sync product with Printful");
             }
         });
     }
