@@ -1,0 +1,38 @@
+{
+  "sync_product": {
+    "external_id": "4235234213",
+    "name": "T-shirt",
+    "thumbnail": "​http://your-domain.com/path/to/thumbnail.png",
+    "is_ignored": true
+  },
+  "sync_variants": [
+    {
+      "external_id": "12312414",
+      "variant_id": 9323,
+      "retail_price": "29.99",
+      "is_ignored": true,
+      "sku": "SKU1234",
+      "files": [
+        {
+          "type": "default",
+          "url": "​https://www.example.com/files/tshirts/example.png",
+          "options": [
+            {
+              "id": "template_type",
+              "value": "native"
+            }
+          ],
+          "filename": "shirt1.png",
+          "visible": true
+        }
+      ],
+      "options": [
+        {
+          "id": "embroidery_type",
+          "value": "flat"
+        }
+      ],
+      "availability_status": "active"
+    }
+  ]
+}

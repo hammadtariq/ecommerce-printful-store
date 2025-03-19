@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { PrintfulService } from "../services/printful.service";
 import logger from "../utils/logger";
-import { safeJsonParse, transformToSnakeCase } from "../utils/common";
+import { safeJsonParse } from "../utils/common";
 import { ERROR_MESSAGES } from "../constants";
-import { CreateOrderRequest, Item, ShippingRatesRequest } from "../types/products";
+import { Item, ShippingRatesRequest } from "../types/products";
 
 export const getOrderById = async (
   req: Request,

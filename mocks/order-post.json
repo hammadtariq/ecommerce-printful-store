@@ -1,0 +1,28 @@
+{
+    "recipient": {
+        "name": "John Doe",
+        "address1": "19749 Dearborn St",
+        "city": "Chatsworth",
+        "state_code": "CA",
+        "country_code": "US",
+        "zip": "91311"
+    },
+    "items": [
+        {
+            "variant_id": 8630,
+            "quantity": 1,
+            "files": [
+                {
+                    "type": "front",
+                    "url": "https://picsum.photos/200"
+                }
+            ]
+        }
+    ],
+    "packing_slip": {
+        "email": "john.doe@printful.com",
+        "phone": "288-888-8888",
+        "message": "Custom packing slip",
+        "logo_url": "https://i.picsum.photos/id/817/2000/2000.jpg"
+    }
+}

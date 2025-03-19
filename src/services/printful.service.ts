@@ -1,22 +1,29 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { printfulClient } from "../config/printful";
+import { Category } from "../types/categories";
+import { CreateOrderRequest } from "../types/orders";
 import {
+  ProductStatus,
   ShippingRatesRequest,
-  CreateOrderRequest,
   SyncProductRequest,
 } from "../types/products";
-import { transformToSnakeCase } from "../utils/common";
+import { sanitizeUrlsInObject, transformToSnakeCase } from "../utils/common";
 import logger from "../utils/logger";
 
 export class PrintfulService {
   /**
    * Get all products from Printful store.
    */
-  static async getProductsByStore(storeId: string) {
+  static async getProductsByStore(
+    storeId: string,
+    status?: ProductStatus,
+    categoryId?: string[]
+  ) {
     try {
       logger.info("Fetching products by store from Printful...", { storeId });
 
       const response = await printfulClient.get(`/store/products`, {
-        params: { store_id: storeId },
+        params: { store_id: storeId, category_id: categoryId, status },
       });
 
       logger.info("Products fetched successfully");
@@ -76,6 +83,46 @@ export class PrintfulService {
   }
 
   /**
+   * Get all product categories.
+   */
+  static async getProductCategories(): Promise<Category[]> {
+    try {
+      logger.info("Fetching product categories");
+
+      const response = await printfulClient.get<Category[]>("/categories");
+
+      logger.info("Product categories fetched successfully");
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error("Failed to fetch product categories from Printful");
+    }
+  }
+
+  /**
+   * Get category by id.
+   */
+  static async getCategoryById(id: string): Promise<Category> {
+    try {
+      logger.info("Fetching category by id", { id });
+
+      const response = await printfulClient.get<Category>(`/categories/${id}`);
+
+      logger.info("Category by id fetched successfully");
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error(`Failed to fetch category by id ${id} from Printful`);
+    }
+  }
+
+  /**
    * Get Printful store information.
    */
   static async getStoreInfo(storeId: string) {
@@ -104,7 +151,7 @@ export class PrintfulService {
     try {
       logger.info(`Fetching details for order ID: ${orderId}`);
 
-      const response = await printfulClient.get(`/orders/${orderId}`,{
+      const response = await printfulClient.get(`/orders/${orderId}`, {
         params: { store_id: storeId },
       });
 
@@ -148,11 +195,11 @@ export class PrintfulService {
     isConfirmed: boolean = false
   ) {
     try {
-      const transFormOrder =
+      const orderSnakeCase =
         transformToSnakeCase<CreateOrderRequest>(orderData);
       logger.info("Creating new order...", { orderData });
 
-      const response = await printfulClient.post("/orders", transFormOrder, {
+      const response = await printfulClient.post("/orders", orderSnakeCase, {
         headers: { "X-PF-Store-Id": storeId },
         params: { confirm: isConfirmed },
       });
@@ -195,13 +242,20 @@ export class PrintfulService {
   /**
    * Sync new products with Printful store.
    */
-  static async syncProduct(productData: SyncProductRequest) {
+  static async syncProduct(productData: SyncProductRequest, storeId: string) {
     try {
       logger.info("Syncing new product with Printful...", { productData });
 
+      const sanitizedRequestBody =
+        sanitizeUrlsInObject<SyncProductRequest>(productData);
+
+      const productSnakeCase =
+        transformToSnakeCase<SyncProductRequest>(sanitizedRequestBody);
+
       const response = await printfulClient.post(
         `/store/products`,
-        productData
+        productSnakeCase,
+        { headers: { "X-PF-Store-Id": storeId } }
       );
 
       logger.info("Product synced successfully");
@@ -209,7 +263,7 @@ export class PrintfulService {
     } catch (error: any) {
       logger.error(
         "Printful API Error:",
-        error.response?.data || error.message
+        error.response?.data?.error?.message || error.message
       );
       throw new Error("Failed to sync product with Printful");
     }
