@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { printfulClient } from "../config/printful";
+import { Category } from "../types/categories";
+import { CreateOrderRequest } from "../types/orders";
 import {
+  ProductStatus,
   ShippingRatesRequest,
-  CreateOrderRequest,
   SyncProductRequest,
 } from "../types/products";
 import { sanitizeUrlsInObject, transformToSnakeCase } from "../utils/common";
@@ -11,12 +14,16 @@ export class PrintfulService {
   /**
    * Get all products from Printful store.
    */
-  static async getProductsByStore(storeId: string) {
+  static async getProductsByStore(
+    storeId: string,
+    status?: ProductStatus,
+    categoryId?: string[]
+  ) {
     try {
       logger.info("Fetching products by store from Printful...", { storeId });
 
       const response = await printfulClient.get(`/store/products`, {
-        params: { store_id: storeId },
+        params: { store_id: storeId, category_id: categoryId, status },
       });
 
       logger.info("Products fetched successfully");
@@ -72,6 +79,46 @@ export class PrintfulService {
         error.response?.data || error.message
       );
       throw new Error("Failed to fetch store product details from Printful");
+    }
+  }
+
+  /**
+   * Get all product categories.
+   */
+  static async getProductCategories(): Promise<Category[]> {
+    try {
+      logger.info("Fetching product categories");
+
+      const response = await printfulClient.get<Category[]>("/categories");
+
+      logger.info("Product categories fetched successfully");
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error("Failed to fetch product categories from Printful");
+    }
+  }
+
+  /**
+   * Get category by id.
+   */
+  static async getCategoryById(id: string): Promise<Category> {
+    try {
+      logger.info("Fetching category by id", { id });
+
+      const response = await printfulClient.get<Category>(`/categories/${id}`);
+
+      logger.info("Category by id fetched successfully");
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error(`Failed to fetch category by id ${id} from Printful`);
     }
   }
 

@@ -1,3 +1,5 @@
+import { ENUMS } from "../constants";
+
 export interface Item {
   variantId: number;
   quantity: number;
@@ -131,3 +133,11 @@ interface SyncOption {
   id: string;
   value: string;
 }
+export interface SyncProductRequest {
+  name: string;
+  variants: Item[];
+  thumbnail?: string;
+  description?: string;
+}
+
+export type ProductStatus = (typeof ENUMS.PRODUCT_STATUS)[number];

@@ -1,4 +1,4 @@
-import { createOrder, getOrderById, } from "../controllers/orders.controllers";
+import { createOrder, getOrderById, } from "../controllers/orders.controller";
 import { authenticate } from "../middlewares/auth";
 import { Router } from "express";
 

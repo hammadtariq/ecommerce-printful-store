@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { PrintfulService } from "../services/printful.service";
 import logger from "../utils/logger";
 import { ERROR_MESSAGES } from "../constants";
+import { ProductStatus } from "../types/products";
 
 export const getProductsByStore = async (
   req: Request,
@@ -12,11 +13,17 @@ export const getProductsByStore = async (
     logger.info("Fetching products from Printful...");
 
     const storeId = req.query.store_id as string | undefined;
+    const status = req.query.status as ProductStatus | undefined;
+    const categoryId = req.query.categoryId as string[] | undefined;
 
     if (!storeId) {
       throw new Error(ERROR_MESSAGES.STORE_ID_REQUIRED);
     }
-    const products = await PrintfulService.getProductsByStore(storeId);
+    const products = await PrintfulService.getProductsByStore(
+      storeId,
+      status,
+      categoryId
+    );
     res.status(200).json(products);
   } catch (error) {
     next(error);
@@ -39,7 +46,10 @@ export const getStoreProductById = async (
     if (!storeId) {
       throw new Error(ERROR_MESSAGES.STORE_ID_REQUIRED);
     }
-    const product = await PrintfulService.getStoreProductById(productId, storeId);
+    const product = await PrintfulService.getStoreProductById(
+      productId,
+      storeId
+    );
     res.status(200).json(product);
   } catch (error) {
     next(error);
