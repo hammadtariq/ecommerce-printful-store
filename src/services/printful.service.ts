@@ -58,6 +58,37 @@ export class PrintfulService {
   }
 
   /**
+   * Get placement details of a specific product.
+   */
+  static async getProductMockupById(
+    productId: string,
+    storeId: string
+  ) {
+    try {
+      logger.info(`Fetching placement details for product ID: ${productId}`);
+
+      const response = await printfulClient.get(
+        `/mockup-generator/templates/${productId}`,
+        {
+          params: { store_id: storeId },
+        }
+      );
+
+      logger.info("Product placement details fetched successfully");
+
+      return response.data;
+    } catch (error: any) {
+      logger.error(
+        "Printful API Error:",
+        error.response?.data || error.message
+      );
+      throw new Error(
+        "Failed to fetch product placement details from Printful"
+      );
+    }
+  }
+
+  /**
    * Get details of a specific product in a store.
    */
   static async getStoreProductById(productId: string, storeId: string) {
