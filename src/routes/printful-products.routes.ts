@@ -1,4 +1,4 @@
-import { getProductById, getProductsByStore, getStoreProductById, syncProduct } from "../controllers/products.controller";
+import { getProductById, getProductsByStore, getStoreProductById, getStoreProductMockupById, syncProduct } from "../controllers/products.controller";
 import { authenticate } from "../middlewares/auth";
 import { Router } from "express";
 
@@ -12,5 +12,7 @@ router.get("/", authenticate, getProductsByStore);
 router.get("/:id", authenticate, getProductById);
 // Get store product by ID
 router.get("/store/:id", authenticate, getStoreProductById);
+// Get store product placement by ID
+router.get("/store/mockup/:id", authenticate, getStoreProductMockupById);
 
 export default router;
